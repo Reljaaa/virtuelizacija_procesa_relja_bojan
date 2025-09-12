@@ -3,6 +3,7 @@ using Service.Domain.Validation;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.ServiceModel;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -29,10 +30,9 @@ namespace Service.Services
             var fault = SampleValidator.ValidateSample(sample);
             if(fault != null)
             {
-                Console.WriteLine($"[REJECT] Session {sessionId} - Sample rejected: {fault.Message} (Row: {fault.RowIndex}, Field: {fault.FieldName})");
-                return;
+                throw new FaultException<ValidationFault>(fault, new FaultReason(fault.Message));
             }
-            Console.WriteLine($"[ACCEPT] Session {sessionId} - Sample accepted: VehicleId={sample.VehicleId}, Timestamp={sample.Timestamp}, FrequencyAvg={sample.FrequencyAvg}, VoltageRmsAvg={sample.VoltageRmsAvg}, CurrentRmsAvg={sample.CurrentRmsAvg}");
+            Console.WriteLine($"[SAMPLE] Session {sessionId} - Sample accepted: VehicleId={sample.VehicleId}, Timestamp={sample.Timestamp}, FrequencyAvg={sample.FrequencyAvg}, VoltageRmsAvg={sample.VoltageRmsAvg}, CurrentRmsAvg={sample.CurrentRmsAvg}");
 
         }
         public void EndSession(int sessionId)

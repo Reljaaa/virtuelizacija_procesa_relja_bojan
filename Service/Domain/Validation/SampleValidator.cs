@@ -14,7 +14,7 @@ namespace Service.Domain.Validation
             if (s.Timestamp == default) 
                 return new ValidationFault
                 {
-                    Message = "Timestamp is required",
+                    Message = "Timestamp je obavezan",
                     RowIndex = s.RowIndex,
                     FieldName = nameof(SampleDto.Timestamp) 
                 };
