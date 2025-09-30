@@ -1,11 +1,7 @@
 ﻿using Common;
 using System;
-using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Service.Domain.Writers
 {
@@ -19,36 +15,21 @@ namespace Service.Domain.Writers
 
         private readonly StreamWriter _sessionWriter;
         private readonly StreamWriter _rejectsWriter;
-        private bool _disposed = false;
+        private bool _disposed;
 
-        public SessionWriter(int sessionId, string vehicleId)
-        {
-            SessionId = sessionId;
-            VehicleId = vehicleId;
-            var date = DateTime.UtcNow.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
-            DirectoryPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", VehicleId, date);
-            
-            Directory.CreateDirectory(DirectoryPath);
-            SessionCsvPath = Path.Combine(DirectoryPath, "session.csv");
-            RejectsCsvPath = Path.Combine(DirectoryPath, "rejects.csv");
-           
-            var sfs = new FileStream(SessionCsvPath, FileMode.Append, FileAccess.Write, FileShare.Read);
-            _sessionWriter = new StreamWriter(sfs) { AutoFlush = true };
-            if (sfs.Length == 0)
-            {
-                _sessionWriter.WriteLine("Timestamp,VoltMin,VoltAvg,VoltMax,CurrMin,CurrAvg,CurrMax,RealMin,RealAvg,RealMax,ReacMin,ReacAvg,ReacMax,AppMin,AppAvg,AppMax,FreqMin,FreqAvg,FreqMax,RowIndex,VehicleId");
-            }
+        // Jedinstveni header (isti redosled kao u FormatCsvLine)
+        public static readonly string CsvHeader =
+            "Timestamp,VoltageRmsMin,VoltageRmsAvg,VoltageRmsMax," +
+            "CurrentRmsMin,CurrentRmsAvg,CurrentRmsMax," +
+            "RealPowerMin,RealPowerAvg,RealPowerMax," +
+            "ReactivePowerMin,ReactivePowerAvg,ReactivePowerMax," +
+            "ApparentPowerMin,ApparentPowerAvg,ApparentPowerMax," +
+            "FrequencyMin,FrequencyAvg,FrequencyMax,RowIndex,VehicleId";
 
-            var rfs = new FileStream(RejectsCsvPath, FileMode.Append, FileAccess.Write, FileShare.Read);
-            _rejectsWriter = new StreamWriter(rfs) { AutoFlush = true };
-            if (rfs.Length == 0)
-            {
-                _rejectsWriter.WriteLine("RowIndex,Field,Message");
-            }
-        }
-        public void WriteSample(SampleDto s)
+        // Formatter za jedan CSV red (koristi ga i fajl i konzola)
+        public static string FormatCsvLine(SampleDto s)
         {
-            string line = string.Join(",",
+            return string.Join(",",
                 s.Timestamp.ToString("o", CultureInfo.InvariantCulture),
                 s.VoltageRmsMin.ToString(CultureInfo.InvariantCulture),
                 s.VoltageRmsAvg.ToString(CultureInfo.InvariantCulture),
@@ -71,13 +52,40 @@ namespace Service.Domain.Writers
                 s.RowIndex.ToString(CultureInfo.InvariantCulture),
                 s.VehicleId
             );
-            _sessionWriter.WriteLine(line);
         }
+
+        public SessionWriter(int sessionId, string vehicleId, string baseDir)
+        {
+            SessionId = sessionId;
+            VehicleId = vehicleId ?? string.Empty;
+
+            var datePart = DateTime.Now.ToString("yyyy-MM-dd");
+            DirectoryPath = Path.Combine(baseDir ?? "", VehicleId, datePart);
+            Directory.CreateDirectory(DirectoryPath);
+
+            SessionCsvPath = Path.Combine(DirectoryPath, "session.csv");
+            RejectsCsvPath = Path.Combine(DirectoryPath, "rejects.csv");
+
+            var sfs = new FileStream(SessionCsvPath, FileMode.Append, FileAccess.Write, FileShare.Read);
+            _sessionWriter = new StreamWriter(sfs) { AutoFlush = true };
+            if (sfs.Length == 0) _sessionWriter.WriteLine(CsvHeader);
+
+            var rfs = new FileStream(RejectsCsvPath, FileMode.Append, FileAccess.Write, FileShare.Read);
+            _rejectsWriter = new StreamWriter(rfs) { AutoFlush = true };
+            if (rfs.Length == 0) _rejectsWriter.WriteLine("RowIndex,Field,Message");
+        }
+
+        public void WriteSample(SampleDto s)
+        {
+            _sessionWriter.WriteLine(FormatCsvLine(s));
+        }
+
         public void WriteReject(int rowIndex, string field, string message)
-        { 
+        {
             var safeMsg = (message ?? "").Replace("\"", "''");
             _rejectsWriter.WriteLine($"{rowIndex},{field},\"{safeMsg}\"");
         }
+
         public void Dispose()
         {
             if (!_disposed)
@@ -89,3 +97,5 @@ namespace Service.Domain.Writers
         }
     }
 }
+
+
