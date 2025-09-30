@@ -25,7 +25,6 @@ namespace Service
                 Console.WriteLine(ex.ToString());
                 host.Abort();
             }
-            // impl.Dispose() se poziva automatski zbog using-a
         }
     }
 }

@@ -13,8 +13,7 @@ namespace Client
 {
     public class Program
     {
-        // Indeksi kolona u CSV-u
-        const int IDX_TS = 0;  // Date Time
+        const int IDX_TS = 0;  
         const int IDX_VRMS_MIN = 1; const int IDX_VRMS_AVG = 2; const int IDX_VRMS_MAX = 3;
         const int IDX_IRMS_MIN = 4; const int IDX_IRMS_AVG = 5; const int IDX_IRMS_MAX = 6;
         const int IDX_RP_MIN = 7; const int IDX_RP_AVG = 8; const int IDX_RP_MAX = 9;
@@ -70,13 +69,12 @@ namespace Client
                         {
                             if (!headerSkipped)
                             {
-                                // preskoči header ako postoji (počinje sa "Date Time")
                                 if (line.TrimStart().StartsWith("Date Time", StringComparison.OrdinalIgnoreCase))
                                 {
                                     headerSkipped = true;
                                     continue;
                                 }
-                                headerSkipped = true; // ako nema header-a, prvi red je odmah podatak
+                                headerSkipped = true; 
                             }
 
                             rowIndex++;
@@ -89,7 +87,6 @@ namespace Client
                                 continue;
                             }
 
-                            // Parsiranje obaveznih polja
                             if (!TryTimestamp(f[IDX_TS], out var ts))
                             {
                                 AppendReject(rejectsPath, rowIndex, "Timestamp", $"Neispravan datum/vreme: {f[IDX_TS]}");
@@ -116,7 +113,6 @@ namespace Client
                                 rejected++; continue;
                             }
 
-                            // Sastavi DTO
                             var sample = new SampleDto
                             {
                                 Timestamp = ts,
@@ -147,7 +143,7 @@ namespace Client
                             {
                                 proxy.PushSample(sessionId, sample);
                                 accepted++;
-                                Thread.Sleep(50); // mali tempo da se lepo vidi tok
+                                Thread.Sleep(50);
                             }
                             catch (FaultException<ValidationFault> fx)
                             {
@@ -158,7 +154,6 @@ namespace Client
                         }
                     }
 
-                    // normalan kraj
                     proxy.EndSession(sessionId);
                     SafeClose(ch, factory);
                     Console.WriteLine($"\n[END] Session ended. Total: {rowIndex}, accepted: {accepted}, rejected: {rejected}");
@@ -176,8 +171,6 @@ namespace Client
 
             PauseExit();
         }
-
-        // ————— Pomocne funkcije —————
 
         static (string vehicleId, string csvPath) PickVehicleAndCsv()
         {
@@ -208,12 +201,10 @@ namespace Client
 
         static bool TryTimestamp(string s, out DateTime dt)
         {
-            // prvo pokušaj standardni format iz CSV-a "yyyy-MM-dd HH:mm:ss"
             if (DateTime.TryParseExact(s.Trim(), "yyyy-MM-dd HH:mm:ss",
                 CultureInfo.InvariantCulture, DateTimeStyles.None, out dt))
                 return true;
 
-            // fallback na generalni parser (ako dođe drugačiji format)
             return DateTime.TryParse(s, CultureInfo.InvariantCulture, DateTimeStyles.None, out dt);
         }
 
@@ -236,7 +227,7 @@ namespace Client
                 if (!File.Exists(path))
                     File.WriteAllText(path, "RowIndex,Field,Message\n");
             }
-            catch { /* best-effort */ }
+            catch { }
         }
 
         static void AppendReject(string path, int rowIndex, string field, string message)

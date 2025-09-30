@@ -17,7 +17,6 @@ namespace Service.Domain.Writers
         private readonly StreamWriter _rejectsWriter;
         private bool _disposed;
 
-        // Jedinstveni header (isti redosled kao u FormatCsvLine)
         public static readonly string CsvHeader =
             "Timestamp,VoltageRmsMin,VoltageRmsAvg,VoltageRmsMax," +
             "CurrentRmsMin,CurrentRmsAvg,CurrentRmsMax," +
@@ -26,7 +25,6 @@ namespace Service.Domain.Writers
             "ApparentPowerMin,ApparentPowerAvg,ApparentPowerMax," +
             "FrequencyMin,FrequencyAvg,FrequencyMax,RowIndex,VehicleId";
 
-        // Formatter za jedan CSV red (koristi ga i fajl i konzola)
         public static string FormatCsvLine(SampleDto s)
         {
             return string.Join(",",

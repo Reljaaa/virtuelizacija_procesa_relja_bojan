@@ -48,7 +48,6 @@ namespace Service.Services
                 _vehicleBySession[id] = request.VehicleId;
             }
 
-            // Konekcija klijenta – cleanup i ako klijent samo zatvori prozor
             var ch = OperationContext.Current.Channel;
             ch.Closed += (_, __) => SafeEndSession(id, "client channel closed");
             ch.Faulted += (_, __) => SafeEndSession(id, "client channel faulted");
@@ -66,6 +65,7 @@ namespace Service.Services
 
         public void PushSample(int sessionId, SampleDto sample)
         {
+
             if (!_sessions.TryGetValue(sessionId, out var writer))
             {
                 ConsoleUi.Warn(sessionId, "UNKNOWN_SESSION", $"PushSample for unknown SessionId={sessionId}");
@@ -94,23 +94,22 @@ namespace Service.Services
             writer.WriteSample(sample);
             _accepted[sessionId] = _accepted[sessionId] + 1;
 
-            // Lep, poravnat prikaz reda (i opcioni CSV dump ako je ConsoleCsvDump=true)
             var ordinal = _accepted[sessionId] + _rejected[sessionId];
             ConsoleUi.Row(ordinal, sample);
 
-            // Analitika + upozorenja
             var ra = _analytics[sessionId];
-            var prevF = ra.LastFreq; // za Δf poruku
+            var prevF = ra.LastFreq;
+            var prevP = ra.LastPowerAvg;
             var codes = ra.UpdateAndCheck(sample);
 
             foreach (var code in codes)
             {
                 string msg =
-                    code == "OVERLOAD" ? $"RealPowerMax={sample.RealPowerMax:F3} kW" :
-                    code == "ENERGY_STALL" ? $"LowPowerRun={ra.LowPowerRun}" :
-                    code == "FREQUENCY_OUT_OF_RANGE" ? $"f={sample.FrequencyAvg:F3} Hz" :
-                    code == "FREQUENCY_SPIKE" ? (prevF.HasValue ? $"Δf={(Math.Abs(sample.FrequencyAvg - prevF.Value)):F3} Hz" : "") :
-                                                        "";
+                code == "OVERLOAD" ? $"RealPowerMax={sample.RealPowerMax:F3} kW" :
+                code == "ENERGY_STALL" ? $"StallRun={ra.StallRun}, ΔP≈{(prevP.HasValue ? Math.Abs(sample.RealPowerAvg - prevP.Value) : 0):F3} kW, ΔE≈{ra.LastDeltaE_KWh:F6} kWh" :
+                code == "FREQUENCY_OUT_OF_RANGE" ? $"f={sample.FrequencyAvg:F3} Hz" :
+                code == "FREQUENCY_SPIKE" ? (prevF.HasValue ? $"Δf={(Math.Abs(sample.FrequencyAvg - prevF.Value)):F3} Hz" : "") :
+                "";
 
                 ChargingEventHub.Raise(this, new WarningEvent
                 {
@@ -146,7 +145,7 @@ namespace Service.Services
             lock (_gate)
             {
                 if (!_sessions.TryGetValue(sessionId, out var writer))
-                    return; // već je očišćeno
+                    return;
 
                 writer.Dispose();
                 _sessions.Remove(sessionId);
@@ -177,7 +176,6 @@ namespace Service.Services
             if (_disposed) return;
             _disposed = true;
 
-            // Očisti sve otvorene sesije pri gašenju servisa
             List<int> toClose;
             lock (_gate)
             {

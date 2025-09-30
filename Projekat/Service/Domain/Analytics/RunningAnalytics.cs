@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Linq;
+using System.Globalization;
 
 namespace Service.Domain.Analytics
 {
@@ -10,30 +11,31 @@ namespace Service.Domain.Analytics
     {
         public double EnergyKWh { get; private set; }
         public DateTime? LastTs { get; private set; }
-
-        // za poruke
         public double? LastFreq { get; private set; }
         public double? LastFreqMin { get; private set; }
         public double? LastFreqMax { get; private set; }
-        public int LowPowerRun { get; private set; } // sada broji uzastopne ΔE ≈ 0
+        public double? LastPowerAvg { get; private set; }
+        public int StallRun { get; private set; }  
+        public double LastDeltaE_KWh { get; private set; }
 
-        readonly double overloadKw;     // prag za RealPowerMax
-        readonly double spikeHz;        // prag za spike
-        readonly int stallWindow;    // koliko ΔE≈0 redova zaredom
-        readonly double stallEpsKWh;    // koliko je "≈0" kWh
-        readonly double devHz;          // dozvoljeno odstupanje Avg od nominalne
+        readonly double overloadKw;             
+        readonly double spikeHz;              
+        readonly double devHz;              
+        readonly int stallWindow;         
+        readonly double stallEpsKWh;                
+        readonly double stallPowerDeltaEpsKw;     
+        readonly string stallMode;               
 
-        double nominalHz;               // ako je definisano brojem u configu
+        double nominalHz;
         bool nominalFixed;
         readonly bool autoNominal;
-        readonly int warmupN = 8;       // koliko uzoraka za auto-nominal
+        readonly int warmupN = 8;
         readonly Queue<double> warmup = new Queue<double>();
 
         static double ReadDouble(string key, double def)
         {
             var s = ConfigurationManager.AppSettings[key];
-            return double.TryParse(s, System.Globalization.NumberStyles.Float,
-                   System.Globalization.CultureInfo.InvariantCulture, out var v) ? v : def;
+            return double.TryParse(s, NumberStyles.Float, CultureInfo.InvariantCulture, out var v) ? v : def;
         }
         static int ReadInt(string key, int def)
         {
@@ -45,13 +47,14 @@ namespace Service.Domain.Analytics
         {
             overloadKw = ReadDouble("OverloadKw", 7.0);
             spikeHz = ReadDouble("FreqSpikeHz", 0.3);
+            devHz = ReadDouble("FreqDeviationHz", 0.5);
             stallWindow = ReadInt("StallWindow", 10);
             stallEpsKWh = ReadDouble("StallEpsKWh", 1e-4);
-            devHz = ReadDouble("FreqDeviationHz", 0.5);
+            stallPowerDeltaEpsKw = ReadDouble("StallPowerDeltaEpsKw", 0.05);
+            stallMode = ConfigurationManager.AppSettings["StallMode"]?.ToLowerInvariant() ?? "both";
 
             var nf = ConfigurationManager.AppSettings["NominalFreqHz"];
-            if (double.TryParse(nf, System.Globalization.NumberStyles.Float,
-                                System.Globalization.CultureInfo.InvariantCulture, out var f))
+            if (double.TryParse(nf, NumberStyles.Float, CultureInfo.InvariantCulture, out var f))
             {
                 nominalHz = f;
                 nominalFixed = true;
@@ -59,7 +62,7 @@ namespace Service.Domain.Analytics
             }
             else
             {
-                autoNominal = true;    // "auto" ili nema ključa
+                autoNominal = true; 
                 nominalFixed = false;
                 nominalHz = 0;
             }
@@ -69,29 +72,35 @@ namespace Service.Domain.Analytics
         {
             var codes = new List<string>();
 
-            // 1) Energija i "stall"
             double dE = 0.0;
             if (LastTs.HasValue)
             {
                 var dt = (s.Timestamp - LastTs.Value).TotalSeconds;
-                if (dt > 0)
-                {
-                    dE = s.RealPowerAvg * dt / 3600.0;
-                    EnergyKWh += dE;
-                }
+                if (dt > 0) { dE = s.RealPowerAvg * dt / 3600.0; EnergyKWh += dE; }
             }
-            if (dE <= stallEpsKWh) LowPowerRun++; else LowPowerRun = 0;
-            if (LowPowerRun > stallWindow) codes.Add("ENERGY_STALL");
+            LastDeltaE_KWh = dE;
 
-            // 2) Overload po RealPowerMax (kW)
+            var dP = LastPowerAvg.HasValue ? Math.Abs(s.RealPowerAvg - LastPowerAvg.Value) : double.MaxValue;
+
+            bool lowEnergy = dE <= stallEpsKWh;
+            bool flatPower = dP <= stallPowerDeltaEpsKw;
+            bool stallCond =
+                stallMode == "energy" ? lowEnergy :
+                stallMode == "powerflat" ? flatPower :
+                                           (lowEnergy || flatPower);
+
+            if (stallCond) StallRun++;
+            else StallRun = 0;
+
+            if (StallRun > stallWindow) codes.Add("ENERGY_STALL");
+
             if (s.RealPowerMax > overloadKw) codes.Add("OVERLOAD");
 
-            // 3) Nominalna frekvencija: fiksna ili auto (rolni prosek prvih ~8 uzoraka)
             if (!nominalFixed && autoNominal)
             {
                 warmup.Enqueue(s.FrequencyAvg);
                 if (warmup.Count > warmupN) warmup.Dequeue();
-                if (warmup.Count == warmupN) nominalHz = warmup.Average(); // postavi nominal
+                if (warmup.Count == warmupN) nominalHz = warmup.Average();
             }
             var haveNominal = nominalFixed || warmup.Count > 0;
             if (haveNominal)
@@ -101,7 +110,6 @@ namespace Service.Domain.Analytics
                     codes.Add("FREQUENCY_OUT_OF_RANGE");
             }
 
-            // 4) Spike: maksimalna promena između redova po Avg/Min/Max
             if (LastFreq.HasValue)
             {
                 var dAvg = Math.Abs(s.FrequencyAvg - LastFreq.Value);
@@ -111,11 +119,11 @@ namespace Service.Domain.Analytics
                 if (d > spikeHz) codes.Add("FREQUENCY_SPIKE");
             }
 
-            // state update
             LastTs = s.Timestamp;
             LastFreq = s.FrequencyAvg;
             LastFreqMin = s.FrequencyMin;
             LastFreqMax = s.FrequencyMax;
+            LastPowerAvg = s.RealPowerAvg;
 
             return codes;
         }

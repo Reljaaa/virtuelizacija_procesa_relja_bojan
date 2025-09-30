@@ -1,0 +1,11 @@
+C:\Users\Miljana\Documents\E3\VP\Eliminacioni\Eliminacioni\Service\bin\Debug\Service.exe.config
+C:\Users\Miljana\Documents\E3\VP\Eliminacioni\Eliminacioni\Service\bin\Debug\Service.exe
+C:\Users\Miljana\Documents\E3\VP\Eliminacioni\Eliminacioni\Service\bin\Debug\Service.pdb
+C:\Users\Miljana\Documents\E3\VP\Eliminacioni\Eliminacioni\Service\bin\Debug\Common.dll
+C:\Users\Miljana\Documents\E3\VP\Eliminacioni\Eliminacioni\Service\bin\Debug\Common.pdb
+C:\Users\Miljana\Documents\E3\VP\Eliminacioni\Eliminacioni\Service\obj\Debug\Service.csproj.AssemblyReference.cache
+C:\Users\Miljana\Documents\E3\VP\Eliminacioni\Eliminacioni\Service\obj\Debug\Service.csproj.CoreCompileInputs.cache
+C:\Users\Miljana\Documents\E3\VP\Eliminacioni\Eliminacioni\Service\obj\Debug\Service.csproj.Up2Date
+C:\Users\Miljana\Documents\E3\VP\Eliminacioni\Eliminacioni\Service\obj\Debug\Service.exe
+C:\Users\Miljana\Documents\E3\VP\Eliminacioni\Eliminacioni\Service\obj\Debug\Service.pdb
+C:\Users\Miljana\Documents\E3\VP\Eliminacioni\Eliminacioni\Service\obj\Debug\Service.exe.config

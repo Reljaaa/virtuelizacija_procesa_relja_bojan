@@ -1,0 +1,6 @@
+C:\Users\Miljana\Documents\E3\VP\Eliminacioni\Eliminacioni\Common\bin\Debug\Common.dll
+C:\Users\Miljana\Documents\E3\VP\Eliminacioni\Eliminacioni\Common\bin\Debug\Common.pdb
+C:\Users\Miljana\Documents\E3\VP\Eliminacioni\Eliminacioni\Common\obj\Debug\Common.csproj.AssemblyReference.cache
+C:\Users\Miljana\Documents\E3\VP\Eliminacioni\Eliminacioni\Common\obj\Debug\Common.csproj.CoreCompileInputs.cache
+C:\Users\Miljana\Documents\E3\VP\Eliminacioni\Eliminacioni\Common\obj\Debug\Common.dll
+C:\Users\Miljana\Documents\E3\VP\Eliminacioni\Eliminacioni\Common\obj\Debug\Common.pdb

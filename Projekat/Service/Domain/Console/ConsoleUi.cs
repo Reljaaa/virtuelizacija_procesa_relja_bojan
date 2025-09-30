@@ -22,6 +22,7 @@ namespace Service.Domain
         {
             _headerPrinted = false;
             Info($"[START] Session {sessionId} for Vehicle={vehicle}");
+            Info("Status: prenos u toku...");
         }
 
         public static void PrintHeader()
@@ -63,6 +64,7 @@ namespace Service.Domain
         {
             Console.WriteLine(new string('-', 96));
             Info($"[END] Session {sessionId}: total={total}, accepted={accepted}, rejected={rejected}");
+            Info("Status: prenos završen.");
         }
 
         public static void Info(string msg) => Console.WriteLine(msg);

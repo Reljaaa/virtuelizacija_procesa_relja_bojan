@@ -1,0 +1,10 @@
+C:\Users\Miljana\Documents\E3\VP\Eliminacioni\Eliminacioni\Client\bin\Debug\Client.exe.config
+C:\Users\Miljana\Documents\E3\VP\Eliminacioni\Eliminacioni\Client\bin\Debug\Client.exe
+C:\Users\Miljana\Documents\E3\VP\Eliminacioni\Eliminacioni\Client\bin\Debug\Client.pdb
+C:\Users\Miljana\Documents\E3\VP\Eliminacioni\Eliminacioni\Client\bin\Debug\Common.dll
+C:\Users\Miljana\Documents\E3\VP\Eliminacioni\Eliminacioni\Client\bin\Debug\Common.pdb
+C:\Users\Miljana\Documents\E3\VP\Eliminacioni\Eliminacioni\Client\obj\Debug\Client.csproj.AssemblyReference.cache
+C:\Users\Miljana\Documents\E3\VP\Eliminacioni\Eliminacioni\Client\obj\Debug\Client.csproj.CoreCompileInputs.cache
+C:\Users\Miljana\Documents\E3\VP\Eliminacioni\Eliminacioni\Client\obj\Debug\Client.csproj.Up2Date
+C:\Users\Miljana\Documents\E3\VP\Eliminacioni\Eliminacioni\Client\obj\Debug\Client.exe
+C:\Users\Miljana\Documents\E3\VP\Eliminacioni\Eliminacioni\Client\obj\Debug\Client.pdb
